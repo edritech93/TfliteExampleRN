@@ -1,99 +1,58 @@
-import * as React from 'react';
-import {StyleSheet, View, Text, ActivityIndicator} from 'react-native';
-import {
-  Tensor,
-  TensorflowModel,
-  useTensorflowModel,
-} from 'react-native-fast-tflite';
+import React, {useEffect} from 'react';
+import {StyleSheet} from 'react-native';
 import {
   Camera,
+  Frame,
   useCameraDevice,
   useCameraPermission,
   useFrameProcessor,
 } from 'react-native-vision-camera';
 import {useResizePlugin} from 'vision-camera-resize-plugin';
-
-function tensorToString(tensor: Tensor): string {
-  return `\n  - ${tensor.dataType} ${tensor.name}[${tensor.shape}]`;
-}
-function modelToString(model: TensorflowModel): string {
-  return (
-    `TFLite Model (${model.delegate}):\n` +
-    `- Inputs: ${model.inputs.map(tensorToString).join('')}\n` +
-    `- Outputs: ${model.outputs.map(tensorToString).join('')}`
-  );
-}
+import {useTensorflowModel} from 'react-native-fast-tflite';
 
 export default function App(): React.ReactNode {
   const {hasPermission, requestPermission} = useCameraPermission();
+  const {resize} = useResizePlugin();
+  const {model} = useTensorflowModel(
+    require('./assets/object_detector.tflite'),
+  );
   const device = useCameraDevice('back');
 
-  const model = useTensorflowModel(require('./assets/object_detector.tflite'));
-  const actualModel = model.state === 'loaded' ? model.model : undefined;
-
-  React.useEffect(() => {
-    if (actualModel == null) return;
-    console.log(`Model loaded! Shape:\n${modelToString(actualModel)}]`);
-  }, [actualModel]);
-
-  const {resize} = useResizePlugin();
+  useEffect(() => {
+    requestPermission();
+  }, [requestPermission]);
 
   const frameProcessor = useFrameProcessor(
-    frame => {
+    (frame: Frame) => {
       'worklet';
-      if (actualModel == null) {
-        // model is still loading...
+      if (model == null) {
         return;
       }
-      console.log(`Running inference on ${frame}`);
-      const resized = resize(frame, {
+      const data = resize(frame, {
         size: {
           width: 640,
           height: 640,
         },
         pixelFormat: 'rgb-uint8',
       });
-      const result = actualModel.runSync([resized]);
-      console.log('Result: ' + result.length);
+      const array = new Uint8Array(data);
+      const output = model.runSync([array]);
+      console.log('Result: ' + output.length);
     },
-    [actualModel],
+    [model],
   );
 
-  React.useEffect(() => {
-    requestPermission();
-  }, [requestPermission]);
-
-  console.log(`Model: ${model.state} (${model.model != null})`);
-
-  return (
-    <View style={styles.container}>
-      {hasPermission && device != null ? (
-        <Camera
-          device={device}
-          style={StyleSheet.absoluteFill}
-          isActive={true}
-          pixelFormat={'yuv'}
-          frameProcessor={frameProcessor}
-        />
-      ) : (
-        <Text>No Camera available.</Text>
-      )}
-
-      {model.state === 'loading' && (
-        <ActivityIndicator size="small" color="white" />
-      )}
-
-      {model.state === 'error' && (
-        <Text>Failed to load model! {model.error.message}</Text>
-      )}
-    </View>
-  );
+  if (hasPermission && device != null) {
+    return (
+      <Camera
+        device={device}
+        style={StyleSheet.absoluteFill}
+        isActive={true}
+        pixelFormat={'yuv'}
+        frameProcessor={frameProcessor}
+      />
+    );
+  } else {
+    return null;
+  }
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-});
