@@ -7,21 +7,13 @@ import {
   useCameraPermission,
   useFrameProcessor,
 } from 'react-native-vision-camera';
+import {TensorflowModel, loadTensorflowModel} from 'react-native-fast-tflite';
 import {useResizePlugin} from 'vision-camera-resize-plugin';
-import {
-  TensorflowModel,
-  loadTensorflowModel,
-  useTensorflowModel,
-} from 'react-native-fast-tflite';
 
 export default function App(): React.ReactNode {
   const {hasPermission, requestPermission} = useCameraPermission();
   const {resize} = useResizePlugin();
-  // const {model} = useTensorflowModel(
-  //   require('./assets/object_detector.tflite'),
-  // );
   const device = useCameraDevice('back');
-
   const [model, setModel] = useState<TensorflowModel | null>(null);
 
   useEffect(() => {
@@ -46,13 +38,12 @@ export default function App(): React.ReactNode {
       }
       const data = resize(frame, {
         size: {
-          width: 640,
-          height: 640,
+          width: 192,
+          height: 192,
         },
         pixelFormat: 'rgb-uint8',
       });
       const array = new Uint8Array(data);
-      // const output = model.runSync([data]);
       const output = model.runSync([array] as any[]);
       // console.log('Result: ' + output.length);
 
@@ -65,7 +56,6 @@ export default function App(): React.ReactNode {
       for (let i = 0; i < detection_boxes.length; i += 4) {
         const confidence = detection_scores[i / 4];
         console.log('confidence => ', confidence);
-        // npm install @shopify/react-native-skia
         // if (confidence > 0.7) {
         //   // 4. Draw a red box around the detected object!
         //   const left = detection_boxes[i];
