@@ -7,13 +7,14 @@ import {
   useCameraPermission,
   useFrameProcessor,
 } from 'react-native-vision-camera';
+import {Canvas, Skia, SkRect, SkColor} from '@shopify/react-native-skia';
 import {TensorflowModel, loadTensorflowModel} from 'react-native-fast-tflite';
 import {useResizePlugin} from 'vision-camera-resize-plugin';
 
 export default function App(): React.ReactNode {
   const {hasPermission, requestPermission} = useCameraPermission();
   const {resize} = useResizePlugin();
-  const device = useCameraDevice('back');
+  const device = useCameraDevice('front');
   const [model, setModel] = useState<TensorflowModel | null>(null);
 
   useEffect(() => {
@@ -54,17 +55,17 @@ export default function App(): React.ReactNode {
       // console.log(`Detected ${num_detections} objects!`);
 
       for (let i = 0; i < detection_boxes.length; i += 4) {
-        const confidence = detection_scores[i / 4];
-        console.log('confidence => ', confidence);
+        // const confidence = detection_scores[i / 4];
+        // console.log('confidence => ', confidence);
         // if (confidence > 0.7) {
         //   // 4. Draw a red box around the detected object!
-        //   const left = detection_boxes[i];
-        //   const top = detection_boxes[i + 1];
-        //   const right = detection_boxes[i + 2];
-        //   const bottom = detection_boxes[i + 3];
-        //   const rect = SkRect.Make(left, top, right, bottom);
-        //   frame.drawRect(rect, SkColors.Red);
+        // const left = detection_boxes[i];
+        // const top = detection_boxes[i + 1];
+        // const right = detection_boxes[i + 2];
+        // const bottom = detection_boxes[i + 3];
+        // console.log('detection_boxes => ', detection_boxes[i]);
         // }
+        // console.log(`${detection_boxes[i] >= 0.7 ? 'TRUE' : '-'}`);
       }
     },
     [model],
