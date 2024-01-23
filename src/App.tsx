@@ -45,7 +45,6 @@ export default function App(): React.ReactNode {
         // model is still loading...
         return;
       }
-
       console.log(`Running inference on ${frame}`);
       const resized = resize(frame, {
         size: {
@@ -73,6 +72,7 @@ export default function App(): React.ReactNode {
           device={device}
           style={StyleSheet.absoluteFill}
           isActive={true}
+          pixelFormat={'yuv'}
           frameProcessor={frameProcessor}
         />
       ) : (
@@ -97,16 +97,3 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
 });
-
-// import {StyleSheet, Text, View} from 'react-native';
-// import React from 'react';
-
-// export default function App() {
-//   return (
-//     <View>
-//       <Text>App</Text>
-//     </View>
-//   );
-// }
-
-// const styles = StyleSheet.create({});
